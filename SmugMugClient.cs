@@ -130,7 +130,7 @@ namespace SmugMugGalleryCollector
 
         public bool CollectImages(string galleryUri, IEnumerable<string> fileCollection)
         {
-            var request = new RestRequest($"{galleryUri}!collectimages");
+            var request = new RestRequest($"{galleryUri}!collectimages?APIKey={apiKey}");
 
             var body = new
             {
