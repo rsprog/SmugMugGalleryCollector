@@ -50,7 +50,7 @@ namespace SmugMugGalleryCollector
 
         public IEnumerable<GalleryFile> GetFiles(string galleryUri)
         {
-            var response = client.Execute(new RestRequest($"{galleryUri}?_expand=AlbumImages&APIKey={apiKey}"));
+            var response = client.Execute(new RestRequest($"{galleryUri}!images?count=5000&APIKey={apiKey}"));
 
             if (response.StatusCode == System.Net.HttpStatusCode.OK && response.Content is not null)
             {
@@ -58,7 +58,7 @@ namespace SmugMugGalleryCollector
 
                 if (json is not null)
                 {
-                    var images = json["Expansions"]![$"{galleryUri}!images"]!["AlbumImage"];
+                    var images = json["Response"]!["AlbumImage"];
                     if (images is JsonArray)
                     {
                         foreach (var image in images.AsArray())
