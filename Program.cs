@@ -16,13 +16,19 @@ var map = new Dictionary<string, string>();
 // build a map of existing file uris and filenames on remote
 foreach (var gallery in client.GetGalleries(settings.UserName, settings.PhotoFolder))
 {
+    Console.Write($"Getting contents of gallery {gallery.Name}...");
     var files = client.GetFiles(gallery.Uri);
+
     foreach (var file in files)
     {
         if (!map.ContainsKey(file.Filename))
             map[file.Filename] = file.Uri;
     }
+
+    Console.WriteLine(" Done");
 }
+
+Console.WriteLine();
 
 var dir = new DirectoryInfo(settings.LocalCountriesFolder);
 
