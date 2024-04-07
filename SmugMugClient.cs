@@ -82,6 +82,10 @@ namespace SmugMugGalleryCollector
             var body = new
             {
                 Name = newFolder,
+                Privacy = "Public",
+                SecurityType = "GrantAccess",
+                SmugSearchable = "No",
+                WorldSearchable = "No",
                 UrlName = newFolder.Replace(' ', '-'),
             };
 
@@ -101,6 +105,23 @@ namespace SmugMugGalleryCollector
             return null;
         }
 
+        // for some reason, specifying highlight image on folder creation does not work, so we will do a patch instead
+        public bool AddHighlightImageToFolder(string folderUri, string highlightImageUri)
+        {
+            var request = new RestRequest($"{folderUri}?APIKey={apiKey}");
+
+            var body = new
+            {
+                HighlightImageUri = highlightImageUri,
+            };
+
+            request.AddJsonBody(JsonSerializer.Serialize(body));
+
+            var response = client.Execute(request, Method.Patch);
+
+            return response.IsSuccessStatusCode;
+        }
+
         public string? CreateGallery(string folderUri, string galleryName, string albumTemplate)
         {
             var request = new RestRequest($"{folderUri}!albumfromalbumtemplate?APIKey={apiKey}");
@@ -109,6 +130,7 @@ namespace SmugMugGalleryCollector
             {
                 AlbumTemplateUri = albumTemplate,
                 Name = galleryName,
+                SecurityType = "GrantAccess",
                 UrlName = galleryName.Replace(' ', '-'),
             };
 
@@ -142,6 +164,17 @@ namespace SmugMugGalleryCollector
             var response = client.ExecutePost(request);
 
             return response.IsSuccessStatusCode;
+        }
+
+        public string? GetImageUri(string albumImageUri)
+        {
+            var request = new RestRequest(albumImageUri);
+            var response = client.Execute(request);
+            if (response.IsSuccessStatusCode && response.Content is not null) {
+                var json = JsonSerializer.Deserialize<JsonObject>(response.Content);
+                return json!["Response"]!["AlbumImage"]!["Uris"]!["Image"]!["Uri"]!.ToString();
+            }
+            return null;
         }
     }
 }

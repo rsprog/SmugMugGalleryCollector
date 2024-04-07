@@ -47,6 +47,11 @@
         /// </summary>
         public string AlbumTemplate { get; set; } = "";
 
+        /// <summary>
+        /// Uri for SmugMug gallery that contains cover (highlight) images to be used for countries folders (optional)
+        /// </summary>
+        public string? CoverGallery { get; set; } = null;
+
         public bool IsValid()
         {
             return !(string.IsNullOrWhiteSpace(ApiKey)

@@ -11,6 +11,53 @@ if (settings is null || !settings.IsValid())
 }
 
 var client = new SmugMugClient(settings.ApiKey, settings.ApiSecret, settings.AccessToken, settings.AccessTokenSecret);
+
+var covers = new Dictionary<string, string>();
+
+if (!string.IsNullOrWhiteSpace(settings.CoverGallery)) // build a map of cover images
+{
+    foreach (var cover in client.GetFiles(settings.CoverGallery))
+    {
+        var name = Path.GetFileNameWithoutExtension(cover.Filename).Replace("_", " ").ToLowerInvariant();
+        if (!covers.ContainsKey(name))
+        {
+            var imageUri = client.GetImageUri(cover.Uri);
+            if (imageUri is not null)
+                covers[name] = imageUri;
+        }
+    }
+}
+
+var dir = new DirectoryInfo(settings.LocalCountriesFolder);
+var localGalleries = new List<DirectoryInfo>();
+var countryUriMap = new Dictionary<string, string>();
+
+foreach (var folder in dir.GetDirectories()) // iterate through local country folders
+{   
+    var countryFolderUri = client.CreateSubfolder(settings.UserName, settings.CountriesFolder, folder.Name);
+    if (countryFolderUri is null)
+    {
+        Console.WriteLine($"Could not create remote folder: {folder.Name}");
+        continue;
+    }
+    countryUriMap[folder.Name] = countryFolderUri;
+    Console.WriteLine($"Created country folder {folder.Name} with URI {countryFolderUri})");
+
+    if (covers.TryGetValue(folder.Name.ToLowerInvariant(), out string? coverUri))
+    {
+        // add highlight image to folder
+        if (!client.AddHighlightImageToFolder(countryFolderUri, coverUri))
+            Console.WriteLine($"Could not add a highlight image for folder: {folder.Name}");
+    }
+
+    var subdir = new DirectoryInfo(folder.FullName);
+
+    foreach (var subfolder in subdir.GetDirectories()) // iterate through local city folders
+    {
+        localGalleries.Add(subfolder);
+    }
+}
+
 var map = new Dictionary<string, string>();
 
 // build a map of existing file uris and filenames on remote
@@ -29,29 +76,6 @@ foreach (var gallery in client.GetGalleries(settings.UserName, settings.PhotoFol
 }
 
 Console.WriteLine();
-
-var dir = new DirectoryInfo(settings.LocalCountriesFolder);
-var localGalleries = new List<DirectoryInfo>();
-var countryUriMap = new Dictionary<string, string>();
-
-foreach (var folder in dir.GetDirectories()) // iterate through local country folders
-{
-    var countryFolderUri = client.CreateSubfolder(settings.UserName, settings.CountriesFolder, folder.Name);
-    if (countryFolderUri is null)
-    {
-        Console.WriteLine($"Could not create remote folder: {folder.Name}");
-        continue;
-    }
-    countryUriMap[folder.Name] = countryFolderUri;
-    Console.WriteLine($"Created country folder {folder.Name} with URI {countryFolderUri})");
-
-    var subdir = new DirectoryInfo(folder.FullName);
-
-    foreach (var subfolder in subdir.GetDirectories()) // iterate through local city folders
-    {
-        localGalleries.Add(subfolder);
-    }
-}
 
 foreach (var subfolder in localGalleries.OrderBy(s=>s.CreationTimeUtc)) // iterate through local galleries in order of creation time
 {
